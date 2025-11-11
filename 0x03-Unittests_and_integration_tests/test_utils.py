@@ -1,33 +1,38 @@
 #!/usr/bin/env python3
-"""
-Unit tests for utils.access_nested_map
-"""
+"""Unit tests for utils.get_json using unittest.mock"""
 
 import unittest
+from unittest.mock import patch, Mock
 from parameterized import parameterized
-from utils import access_nested_map
+from utils import get_json
 
-class TestAccessNestedMap(unittest.TestCase):
-    """Test cases for the access_nested_map function."""
 
-    @parameterized.expand([
-        ({"a": 1}, ("a",), 1),
-        ({"a": {"b": 2}}, ("a",), {"b": 2}),
-        ({"a": {"b": 2}}, ("a", "b"), 2),
-    ])
-    def test_access_nested_map(self, nested_map, path, expected):
-        """Test that access_nested_map returns the expected result."""
-        self.assertEqual(access_nested_map(nested_map, path), expected)
+class TestGetJson(unittest.TestCase):
+    """Tests for the get_json function"""
 
     @parameterized.expand([
-        ({}, ("a",), "a"),
-        ({"a": 1}, ("a", "b"), "b"),
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False}),
     ])
-    def test_access_nested_map_exception(self, nested_map, path, expected_message):
-        """Test that access_nested_map raises KeyError with the expected message."""
-        with self.assertRaises(KeyError) as context:
-            access_nested_map(nested_map, path)
-        self.assertEqual(str(context.exception), f"'{expected_message}'")
+    @patch("utils.requests.get")
+    def test_get_json(self, test_url, test_payload, mock_get):
+        """
+        Test that utils.get_json returns expected result and
+        requests.get is called correctly.
+        """
+        # Arrange: create mock response object
+        mock_response = Mock()
+        mock_response.json.return_value = test_payload
+        mock_get.return_value = mock_response
+
+        # Act: call get_json with the test_url
+        result = get_json(test_url)
+
+        # Assert: ensure requests.get called once with correct URL
+        mock_get.assert_called_once_with(test_url)
+        # Ensure the function returned expected payload
+        self.assertEqual(result, test_payload)
+
 
 if __name__ == "__main__":
     unittest.main()
