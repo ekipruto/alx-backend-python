@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Unit tests for utils.access_nested_map using parameterization and patching"""
+"""Unit tests for utils module"""
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from parameterized import parameterized
 from utils import access_nested_map, get_json, memoize
 
@@ -17,13 +17,16 @@ class TestAccessNestedMap(unittest.TestCase):
     ])
     def test_access_nested_map(self, nested_map, path, expected):
         """Test access_nested_map with valid inputs"""
-        self.assertEqual(access_nested_map(nested_map, path), expected)
+        result = access_nested_map(nested_map, path)
+        self.assertEqual(result, expected)
 
     @parameterized.expand([
         ({}, ("a",), KeyError),
         ({"a": 1}, ("a", "b"), KeyError),
     ])
-    def test_access_nested_map_exception(self, nested_map, path, expected_exception):
+    def test_access_nested_map_exception(
+        self, nested_map, path, expected_exception
+    ):
         """Test access_nested_map raises KeyError for invalid paths"""
         with self.assertRaises(expected_exception):
             access_nested_map(nested_map, path)
@@ -38,8 +41,8 @@ class TestGetJson(unittest.TestCase):
     ])
     @patch("utils.requests.get")
     def test_get_json(self, test_url, test_payload, mock_get):
-        """Test that utils.get_json returns expected result and mocks requests.get"""
-        mock_response = unittest.mock.Mock()
+        """Test that get_json returns expected result"""
+        mock_response = Mock()
         mock_response.json.return_value = test_payload
         mock_get.return_value = mock_response
 
@@ -60,4 +63,15 @@ class TestMemoize(unittest.TestCase):
 
             @memoize
             def a_property(self):
-                return
+                return self.a_method()
+
+        test_instance = TestClass()
+
+        with patch.object(
+            TestClass, "a_method", return_value=42
+        ) as mock_method:
+            first = test_instance.a_property
+            second = test_instance.a_property
+            self.assertEqual(first, 42)
+            self.assertEqual(second, 42)
+            mock_method.assert_called_once()
