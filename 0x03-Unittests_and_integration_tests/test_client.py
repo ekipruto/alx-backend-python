@@ -24,7 +24,7 @@ class TestGithubOrgClient(unittest.TestCase):
 
         # Act
         client = GithubOrgClient(org_name)
-        result = client.org   # <-- property access, not a method call
+        result = client.org  # ✅ property access (no parentheses)
 
         # Assert
         expected_url = f"https://api.github.com/orgs/{org_name}"
