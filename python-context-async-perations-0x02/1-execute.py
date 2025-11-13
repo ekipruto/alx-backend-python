@@ -3,7 +3,7 @@ import sqlite3
 
 
 class ExecuteQuery:
-    """Custom context manager to execute a SQL query with parameters."""
+    """Custom context manager to execute an SQL query with parameters."""
 
     def __init__(self, db_name, query, params=None):
         """Initialize with database name, SQL query, and parameters."""
