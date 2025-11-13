@@ -34,3 +34,8 @@ class GithubOrgClient:
                 if repo.get("license", {}).get("key") == license
             ]
         return repo_names
+    def has_license(self, repo, license_key):
+        """Check if repo has the specified license"""
+        if "license" not in repo:
+            return False
+        return repo.get("license", {}).get("key") == license_key
