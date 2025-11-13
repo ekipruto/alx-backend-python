@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 """GithubOrgClient module"""
 
+from utils import get_json  # ✅ Import from utils, not define locally
 import requests
-
-
-def get_json(url):
-    """Fetch JSON data from a URL"""
-    response = requests.get(url)
-    return response.json()
 
 
 class GithubOrgClient:
@@ -25,10 +20,17 @@ class GithubOrgClient:
 
     @property
     def _public_repos_url(self):
-        """Return the URL of the organization's public repositories"""
-        return self.org["repos_url"]
+        """Fetch the public repos URL"""
+        return self.org.get("repos_url")
 
-    def public_repos(self):
-        """Return a list of public repository names"""
+    def public_repos(self, license=None):
+        """List public repositories"""
         repos = get_json(self._public_repos_url)
-        return [repo["name"] for repo in repos]
+        repo_names = [repo["name"] for repo in repos]
+
+        if license:
+            repo_names = [
+                repo["name"] for repo in repos
+                if repo.get("license", {}).get("key") == license
+            ]
+        return repo_names

@@ -3,7 +3,7 @@
 
 import unittest
 from unittest.mock import patch, PropertyMock
-from client import GithubOrgClient, get_json
+from client import GithubOrgClient
 
 
 class TestGithubOrgClient(unittest.TestCase):
