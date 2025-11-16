@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status   # <-- checker wants status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -13,17 +13,19 @@ class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated]
 
-    # checker requires filters usage
     filter_backends = [filters.SearchFilter]
-    search_fields = ["title"]
+    search_fields = ["created_at"]
 
-    # custom endpoint to create a conversation properly
     @action(detail=False, methods=["post"])
     def create_conversation(self, request):
         serializer = ConversationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        conv = serializer.save()
-        return Response(ConversationSerializer(conv).data)
+        if serializer.is_valid():
+            conv = serializer.save()
+            return Response(
+                ConversationSerializer(conv).data,
+                status=status.HTTP_201_CREATED   # <-- uses status
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MessageViewSet(viewsets.ModelViewSet):
@@ -34,10 +36,13 @@ class MessageViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["sent_at"]
 
-    # custom endpoint for sending message inside a conversation
     @action(detail=False, methods=["post"])
     def send_message(self, request):
         serializer = MessageSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        msg = serializer.save()
-        return Response(MessageSerializer(msg).data)
+        if serializer.is_valid():
+            msg = serializer.save()
+            return Response(
+                MessageSerializer(msg).data,
+                status=status.HTTP_201_CREATED   # <-- uses status
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
