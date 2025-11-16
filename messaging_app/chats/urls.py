@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-from django.urls import path, include
-from rest_framework import routers   # <-- import routers (required by checker)
-
+from rest_framework.routers import DefaultRouter
 from .views import ConversationViewSet, MessageViewSet
 
-router = routers.DefaultRouter()      # <-- exact string needed
+router = DefaultRouter()
+router.register(r"conversations", ConversationViewSet, basename="conversation")
+router.register(r"messages", MessageViewSet, basename="message")
 
-router.register(r'conversations', ConversationViewSet, basename='conversations')
-router.register(r'messages', MessageViewSet, basename='messages')
-
-urlpatterns = [
-    path("", include(router.urls)),
-]
+urlpatterns = router.urls
