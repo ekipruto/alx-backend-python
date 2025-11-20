@@ -5,6 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 from .permissions import IsParticipantOfConversation
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
+from .pagination import MessagePagination
+from .filters import MessageFilter
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions 
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
@@ -18,9 +22,12 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 
 class MessageViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.all()
+    queryset = Message.objects.all().order_by("-sent_at")
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    pagination_class=MessagePagination
+    filter_backends=[DjangoFilterBackend]
+    filterset_class = MessageFilter
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
