@@ -1,7 +1,8 @@
 # chats/middleware.py
 import logging
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from datetime import datetime
+import time
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -46,3 +47,52 @@ class RestrictAccessByTimeMiddleware:
         # Continue normal request flow
         response = self.get_response(request)
         return response
+
+import time
+from django.http import JsonResponse
+
+class OffensiveLanguageMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Dictionary to track requests per IP: {ip: [timestamps]}
+        self.ip_requests = {}
+        self.limit = 5          # max messages
+        self.time_window = 60   # seconds (1 minute)
+
+    def __call__(self, request):
+        # Only enforce on POST requests (chat messages)
+        if request.method == "POST":
+            ip = self.get_client_ip(request)
+            now = time.time()
+
+            # Initialize list if IP not tracked yet
+            if ip not in self.ip_requests:
+                self.ip_requests[ip] = []
+
+            # Filter out timestamps older than 1 minute
+            self.ip_requests[ip] = [
+                ts for ts in self.ip_requests[ip] if now - ts < self.time_window
+            ]
+
+            # Check if limit exceeded
+            if len(self.ip_requests[ip]) >= self.limit:
+                return JsonResponse(
+                    {"error": "Message limit exceeded. Try again later."},
+                    status=429
+                )
+
+            # Record this request timestamp
+            self.ip_requests[ip].append(now)
+
+        # Continue normal request flow
+        response = self.get_response(request)
+        return response
+
+    def get_client_ip(self, request):
+        """Helper to extract client IP address."""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0]
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+        return ip
