@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
@@ -8,7 +8,6 @@ from .serializers import ConversationSerializer, MessageSerializer
 from .pagination import MessagePagination
 from .filters import MessageFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions 
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
@@ -18,32 +17,34 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Conversation.objects.filter(participants=user)
+        return Conversation.objects.filter(participants__user_id=user.user_id)
 
 
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all().order_by("-sent_at")
     serializer_class = MessageSerializer
-    pagination_class=MessagePagination
-    filter_backends=[DjangoFilterBackend]
+    pagination_class = MessagePagination
+    filter_backends = [DjangoFilterBackend]
     filterset_class = MessageFilter
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-
-        # Checker requires these strings:
         conversation_id = self.kwargs.get("conversation_id")
-        return Message.objects.filter(conversation__id=conversation_id)
+
+        return Message.objects.filter(
+            conversation__conversation_id=conversation_id,
+            conversation__participants__user_id=user.user_id
+        )
 
     def create(self, request, *args, **kwargs):
         conversation_id = kwargs.get("conversation_id")
-        conversation = Conversation.objects.get(id=conversation_id)
+        conversation = Conversation.objects.get(conversation_id=conversation_id)
 
-        if request.user not in conversation.participants.all():
+        if not conversation.participants.filter(user_id=request.user.user_id).exists():
             return Response(
                 {"detail": "Forbidden"},
-                status=status.HTTP_403_FORBIDDEN  # required keyword
+                status=status.HTTP_403_FORBIDDEN
             )
 
         serializer = MessageSerializer(data=request.data)

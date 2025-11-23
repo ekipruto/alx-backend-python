@@ -50,13 +50,14 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ConversationSerializer(serializers.ModelSerializer):
-    # Nested messages
+    # Explicitly define participants to use user_id
+    participants = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all()
+    )
+
     messages = MessageSerializer(many=True, read_only=True)
-
-    # Explicit CharField for title (checker wants it somewhere)
     title = serializers.CharField(required=False, allow_blank=True)
-
-    # SerializerMethodField example
     participant_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -75,7 +76,6 @@ class ConversationSerializer(serializers.ModelSerializer):
         return obj.participants.count()
 
     def validate_participants(self, value):
-        # raise ValidationError (checker requirement)
         if len(value) == 0:
             raise serializers.ValidationError("A conversation must have participants.")
         return value
@@ -83,7 +83,6 @@ class ConversationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         title = validated_data.pop("title", "")
         participants = validated_data.pop("participants", [])
-
         conversation = Conversation.objects.create(**validated_data)
         conversation.participants.set(participants)
         return conversation
