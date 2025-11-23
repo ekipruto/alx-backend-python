@@ -96,3 +96,26 @@ class OffensiveLanguageMiddleware:
         else:
             ip = request.META.get("REMOTE_ADDR")
         return ip
+
+from django.http import JsonResponse
+
+class RolepermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Only enforce role checks if user is authenticated
+        if request.user.is_authenticated:
+            # Assuming 'role' is a field on your User model
+            user_role = getattr(request.user, "role", None)
+
+            # Allow only admin or moderator
+            if user_role not in ["admin", "moderator"]:
+                return JsonResponse(
+                    {"error": "Forbidden: insufficient permissions"},
+                    status=403
+                )
+
+        # Continue normal flow
+        response = self.get_response(request)
+        return response
