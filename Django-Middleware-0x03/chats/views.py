@@ -7,13 +7,14 @@ from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .pagination import MessagePagination
 from .filters import MessageFilter
-from django_filters.rest_framework import DjangoFilterBackend
+from  django_filters.rest_framework import DjangoFilterBackend
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    lookup_field = "conversation_id"
 
     def get_queryset(self):
         user = self.request.user
@@ -27,6 +28,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = MessageFilter
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "message_id"
 
     def get_queryset(self):
         user = self.request.user
