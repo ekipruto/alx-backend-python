@@ -18,7 +18,7 @@ RUN pip install --upgrade pip && \
 # Copy project files
 COPY . .
 
-# Expose Django port
+# Expose Django port (run with: docker run -p 8000:8000 messaging-app)
 EXPOSE 8000
 
 # Run migrations and start server
