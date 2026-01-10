@@ -14,9 +14,9 @@ minikube start --driver=docker
 
 # Check if minikube started successfully
 if [ $? -eq 0 ]; then
-    echo " Minikube cluster started successfully!"
+    echo "✓ Minikube cluster started successfully!"
 else
-    echo " Failed to start Minikube cluster"
+    echo "✗ Failed to start Minikube cluster"
     exit 1
 fi
 
@@ -28,9 +28,9 @@ kubectl cluster-info
 
 # Check if kubectl can connect
 if [ $? -eq 0 ]; then
-    echo " Cluster is running and accessible!"
+    echo "✓ Cluster is running and accessible!"
 else
-    echo " Failed to connect to cluster"
+    echo "✗ Failed to connect to cluster"
     exit 1
 fi
 
