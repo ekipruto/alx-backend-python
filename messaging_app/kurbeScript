@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# kurbeScript - Kubernetes Cluster Setup and Verification Script
+# This script starts a Kubernetes cluster using Minikube and verifies it's running
+
+echo "=========================================="
+echo "Kubernetes Cluster Setup Script"
+echo "=========================================="
+echo ""
+
+# Step 1: Start Minikube cluster
+echo "[1/3] Starting Minikube Kubernetes cluster..."
+minikube start --driver=docker
+
+# Check if minikube started successfully
+if [ $? -eq 0 ]; then
+    echo " Minikube cluster started successfully!"
+else
+    echo " Failed to start Minikube cluster"
+    exit 1
+fi
+
+echo ""
+
+# Step 2: Verify cluster is running
+echo "[2/3] Verifying cluster information..."
+kubectl cluster-info
+
+# Check if kubectl can connect
+if [ $? -eq 0 ]; then
+    echo " Cluster is running and accessible!"
+else
+    echo " Failed to connect to cluster"
+    exit 1
+fi
+
+echo ""
+
+# Step 3: Retrieve available pods
+echo "[3/3] Retrieving available pods..."
+kubectl get pods --all-namespaces
+
+echo ""
+echo "=========================================="
+echo "Setup Complete!"
+echo "=========================================="
+echo ""
+echo "Cluster Status:"
+minikube status
+
+echo ""
+echo "Useful commands:"
+echo "  - kubectl get nodes        : View cluster nodes"
+echo "  - kubectl get pods         : View pods in default namespace"
+echo "  - minikube dashboard       : Open Kubernetes dashboard"
+echo "  - minikube stop            : Stop the cluster"
+echo "  - minikube delete          : Delete the cluster"
