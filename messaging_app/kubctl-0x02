@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# kubctl-0x02 - Blue-Green Deployment Script
+echo "Deploying Blue Version..."
+kubectl apply -f blue_deployment.yaml
+
+echo "Deploying Green Version..."
+kubectl apply -f green_deployment.yaml
+
+echo "Applying service configuration..."
+kubectl apply -f kubeservice.yaml
+
+echo "Checking logs for GREEN deployment..."
+kubectl logs deployment/messaging-app-green
