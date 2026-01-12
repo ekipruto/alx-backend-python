@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# kubctl-0x01 - Scale Django app deployment and monitor performance
+
+DEPLOYMENT_NAME=messaging-app-deployment
+SERVICE_NAME=messaging-app-service
+
+echo "Scaling deployment to 3 replicas..."
+kubectl scale deployment $DEPLOYMENT_NAME --replicas=3
+
+echo "Verifying running pods..."
+kubectl get pods
+
+echo "Performing load testing using wrk..."
+# Replace SERVICE_IP with actual ClusterIP when running in real environment
+# Example: wrk -t2 -c100 -d30s http://SERVICE_IP
+echo "wrk -t2 -c100 -d30s http://<SERVICE_IP>"
+
+echo "Monitoring resource usage..."
+kubectl top pods
+
