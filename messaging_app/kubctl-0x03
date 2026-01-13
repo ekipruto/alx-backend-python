@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# kubctl-0x03 - Rolling Update Script
+
+DEPLOYMENT_NAME=messaging-app-blue
+SERVICE_NAME=messaging-app-service
+
+echo "Applying updated deployment (image v2.0)..."
+kubectl apply -f blue_deployment.yaml
+
+echo "Monitoring rollout status..."
+kubectl rollout status deployment/$DEPLOYMENT_NAME
+
+echo "Testing application availability using curl..."
+echo "Sending requests to service..."
+
+# Example loop to simulate continuous requests
+for i in {1..10}
+do
+  curl -s http://localhost:80 || echo "Request failed"
+  sleep 1
+done
+
+echo "Verifying current pods..."
+kubectl get pods
+
