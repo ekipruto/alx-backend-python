@@ -2,7 +2,6 @@ pipeline {
     agent any
     
     environment {
-        // Docker Hub credentials (we'll add these later)
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_IMAGE = 'your-dockerhub-username/messaging-app'
         DOCKER_TAG = "${BUILD_NUMBER}"
@@ -12,46 +11,54 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out code from GitHub...'
-                checkout scm
+                // Explicit git checkout with credentials and branch
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/ekipruto/alx-backend-python.git'
             }
         }
         
         stage('Setup Python Environment') {
             steps {
                 echo 'Setting up Python environment...'
-                sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pip install pytest pytest-django pytest-cov
-                '''
+                dir('messaging_app') {
+                    sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip3 install --upgrade pip
+                        pip3 install -r messaging_app/requirements.txt
+                        pip3 install pytest pytest-django pytest-cov
+                    '''
+                }
             }
         }
         
         stage('Run Tests') {
             steps {
                 echo ' Running tests with pytest...'
-                sh '''
-                    . venv/bin/activate
-                    cd messaging_app
-                    pytest --verbose --junit-xml=test-results.xml --cov=. --cov-report=html --cov-report=xml
-                '''
+                dir('messaging_app') {
+                    sh '''
+                        . venv/bin/activate
+                        pytest --verbose --junit-xml=test-results.xml --cov=. --cov-report=html --cov-report=xml
+                    '''
+                }
             }
         }
         
         stage('Generate Test Report') {
             steps {
                 echo 'Generating test reports...'
-                junit 'messaging_app/test-results.xml'
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'messaging_app/htmlcov',
-                    reportFiles: 'index.html',
-                    reportName: 'Coverage Report'
-                ])
+                dir('messaging_app') {
+                    junit 'test-results.xml'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'htmlcov',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report'
+                    ])
+                }
             }
         }
         
