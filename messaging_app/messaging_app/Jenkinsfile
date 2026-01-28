@@ -1,0 +1,95 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Docker Hub credentials (we'll add these later)
+        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_IMAGE = 'your-dockerhub-username/messaging-app'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout scm
+            }
+        }
+        
+        stage('Setup Python Environment') {
+            steps {
+                echo 'Setting up Python environment...'
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pip install pytest pytest-django pytest-cov
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                echo ' Running tests with pytest...'
+                sh '''
+                    . venv/bin/activate
+                    cd messaging_app
+                    pytest --verbose --junit-xml=test-results.xml --cov=. --cov-report=html --cov-report=xml
+                '''
+            }
+        }
+        
+        stage('Generate Test Report') {
+            steps {
+                echo 'Generating test reports...'
+                junit 'messaging_app/test-results.xml'
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'messaging_app/htmlcov',
+                    reportFiles: 'index.html',
+                    reportName: 'Coverage Report'
+                ])
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                script {
+                    dir('messaging_app') {
+                        docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                        docker.build("${DOCKER_IMAGE}:latest")
+                    }
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing Docker image to Docker Hub...'
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
+                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
+                        docker.image("${DOCKER_IMAGE}:latest").push()
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo ' Cleaning up...'
+            cleanWs()
+        }
+        success {
+            echo ' Pipeline completed successfully!'
+        }
+        failure {
+            echo ' Pipeline failed!'
+        }
+    }
+}
